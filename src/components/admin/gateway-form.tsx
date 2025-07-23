@@ -6,6 +6,7 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import type { PaymentGatewaySettings } from '@/types';
 
 const formSchema = z.object({
@@ -41,7 +42,7 @@ export function GatewayForm({ settings, onSubmit, isSubmitting }: GatewayFormPro
                     <FormItem><FormLabel>Provider Name</FormLabel><FormControl><Input placeholder="e.g., RupantorPay" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="accessToken" render={({ field }) => (
-                    <FormItem><FormLabel>Access Token</FormLabel><FormControl><Input type="password" placeholder="Your secret access token" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Access Token</FormLabel><FormControl><PasswordInput placeholder="Your secret access token" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="checkoutUrl" render={({ field }) => (
                     <FormItem><FormLabel>Checkout URL</FormLabel><FormControl><Input placeholder="https://provider.com/api/checkout" {...field} /></FormControl><FormMessage /></FormItem>

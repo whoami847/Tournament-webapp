@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 
@@ -84,7 +85,7 @@ export default function RegisterPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Password</FormLabel>
-                    <FormControl><Input type="password" {...field} /></FormControl>
+                    <FormControl><PasswordInput placeholder="Enter your password" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -13,7 +13,7 @@ import Link from 'next/link';
 import { getTournamentsStream } from '@/lib/tournaments-service';
 import { getBannersStream } from '@/lib/banners-service';
 import { getGamesStream } from '@/lib/games-service';
-import { getTopPlayersStream } from '@/lib/users-service';
+import { getTopPlayersStream, getUserProfileStream } from '@/lib/users-service';
 import type { Tournament, Game, FeaturedBanner, GameCategory, PlayerProfile, AppNotification } from '@/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -35,14 +35,21 @@ import { useRouter } from 'next/navigation';
 const HomeHeader = () => {
     const { user } = useAuth();
     const router = useRouter();
-    const displayName = user?.displayName || user?.email?.split('@')[0] || 'Player';
-    const fallback = displayName.charAt(0).toUpperCase();
+    const [profile, setProfile] = useState<PlayerProfile | null>(null);
     const [notifications, setNotifications] = useState<AppNotification[]>([]);
+
+    const displayName = profile?.name || user?.displayName || user?.email?.split('@')[0] || 'Player';
+    const fallback = displayName.charAt(0).toUpperCase();
+    const avatarUrl = profile?.avatar || user?.photoURL || '';
 
     useEffect(() => {
         if (user?.uid) {
-            const unsubscribe = getNotificationsStream(user.uid, setNotifications);
-            return () => unsubscribe();
+            const unsubscribeNotifications = getNotificationsStream(user.uid, setNotifications);
+            const unsubscribeProfile = getUserProfileStream(user.uid, setProfile);
+            return () => {
+                unsubscribeNotifications();
+                unsubscribeProfile();
+            };
         }
     }, [user]);
 
@@ -55,14 +62,24 @@ const HomeHeader = () => {
         router.push(notification.link);
     }
 
+    const handleProfileClick = () => {
+        router.push('/profile');
+    }
+
     return (
         <header className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 border-2 border-primary">
-                <AvatarImage src={user?.photoURL || ''} alt={displayName} data-ai-hint="wizard character" />
-                <AvatarFallback>{fallback}</AvatarFallback>
-            </Avatar>
-            <div><h1 className="font-bold">{displayName}</h1><p className="text-sm text-muted-foreground">Player</p></div>
+            <div 
+                className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity" 
+                onClick={handleProfileClick}
+            >
+                <Avatar className="h-10 w-10 border-2 border-primary">
+                    <AvatarImage src={avatarUrl} alt={displayName} data-ai-hint="wizard character" />
+                    <AvatarFallback>{fallback}</AvatarFallback>
+                </Avatar>
+                <div>
+                    <h1 className="font-bold">{displayName}</h1>
+                    <p className="text-sm text-muted-foreground">Player</p>
+                </div>
             </div>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
