@@ -33,6 +33,7 @@ import { getTransactionsStream } from "@/lib/transactions-service";
 import { createWithdrawalRequest } from '@/lib/withdraw-requests-service';
 import { getWithdrawMethodsStream } from '@/lib/withdraw-methods-service';
 import { format } from 'date-fns';
+import Link from 'next/link';
 
 
 // --- FORM COMPONENTS ---
@@ -349,24 +350,11 @@ const CardStack = ({ balance, profile }: { balance: number, profile: PlayerProfi
                 </div>
 
                 <div className="flex justify-start gap-4">
-                     <Dialog onOpenChange={handleAddMoneyOpenChange}>
-                        <DialogTrigger asChild>
-                             <Button onClick={() => setIsFanned(true)} className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs h-8 px-3 backdrop-blur-sm rounded-md">
-                                <ArrowUp className="mr-2 h-4 w-4" /> Add Money
-                            </Button>
-                        </DialogTrigger>
-                         <DialogContent className="sm:max-w-md p-0 rounded-2xl overflow-hidden">
-                            <DialogHeader className="p-6 pb-4">
-                                <DialogTitle className="text-2xl text-center">Add Money</DialogTitle>
-                                <DialogDescription className="text-center">
-                                   Select or enter an amount to add to your wallet.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="px-6 pb-6">
-                                <AddMoneyForm profile={profile} />
-                            </div>
-                        </DialogContent>
-                    </Dialog>
+                     <Button asChild onClick={() => setIsFanned(true)} className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs h-8 px-3 backdrop-blur-sm rounded-md">
+                        <Link href="/wallet/top-up">
+                            <ArrowUp className="mr-2 h-4 w-4" /> Add Money
+                        </Link>
+                    </Button>
                      <Dialog open={isWithdrawDialogOpen} onOpenChange={handleWithdrawOpenChange}>
                         <DialogTrigger asChild>
                             <Button onClick={() => { setIsFanned(true); setWithdrawDialogOpen(true); }} variant="secondary" className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs h-8 px-3 backdrop-blur-sm rounded-md">

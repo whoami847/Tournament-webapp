@@ -220,3 +220,26 @@ export interface PendingPrize {
   status: 'pending' | 'approved' | 'rejected';
   createdAt: Timestamp | string;
 }
+
+export interface Gateway {
+  id: string;
+  name: string;
+  storePassword: string;
+  isLive: boolean;
+  enabled: boolean;
+  createdAt: Timestamp | string;
+  updatedAt: Timestamp | string;
+}
+
+export interface Order {
+  id: string;
+  userId: string;
+  userName: string;
+  amount: number;
+  gatewayId: string;
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+  paymentId?: string;
+  transactionId?: string;
+  createdAt: Timestamp | string;
+  updatedAt: Timestamp | string;
+}

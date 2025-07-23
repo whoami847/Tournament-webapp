@@ -2,7 +2,6 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { verifyPayment } from '@/lib/payment-actions';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -10,38 +9,26 @@ import { Button } from '@/components/ui/button';
 
 function SuccessContent() {
     const searchParams = useSearchParams();
-    const transactionId = searchParams.get('transaction_id');
-    const [status, setStatus] = useState<'loading' | 'verified' | 'failed' | 'error'>('loading');
-    const [message, setMessage] = useState('Verifying your payment, please wait...');
+    const tranId = searchParams.get('tran_id');
+    const [status, setStatus] = useState<'loading' | 'verified' | 'error'>('loading');
+    const [message, setMessage] = useState('Your payment has been processed successfully!');
 
     useEffect(() => {
-        if (!transactionId) {
+        if (!tranId) {
             setStatus('error');
-            setMessage('No transaction ID found. Payment cannot be verified.');
+            setMessage('No transaction ID found.');
             return;
         }
 
-        const checkPayment = async () => {
-            const result = await verifyPayment(transactionId);
-
-            if (result.status === 'success') {
-                // In a real app, you would check result.data for payment status.
-                // For this example, we assume a 'success' status means the payment was good.
-                setStatus('verified');
-                setMessage('Your payment has been successfully verified and your wallet has been updated.');
-            } else {
-                setStatus('failed');
-                setMessage(result.message || 'Failed to verify payment. Please contact support.');
-            }
-        };
-
-        checkPayment();
-    }, [transactionId]);
+        // Since we've already verified the payment in the callback API,
+        // we can show success immediately
+        setStatus('verified');
+        setMessage('Your payment has been successfully processed and your wallet has been updated.');
+    }, [tranId]);
 
     const statusInfo = {
-        loading: { icon: <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />, title: 'Verifying Payment' },
+        loading: { icon: <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />, title: 'Processing Payment' },
         verified: { icon: <CheckCircle2 className="h-12 w-12 text-green-500" />, title: 'Payment Successful' },
-        failed: { icon: <XCircle className="h-12 w-12 text-red-500" />, title: 'Verification Failed' },
         error: { icon: <XCircle className="h-12 w-12 text-red-500" />, title: 'Error' },
     };
 
@@ -56,11 +43,14 @@ function SuccessContent() {
                 </CardHeader>
                 <CardContent>
                     <CardDescription className="mb-6">{message}</CardDescription>
-                    {status !== 'loading' && (
-                        <Button asChild>
-                            <Link href="/wallet">Go to Wallet</Link>
-                        </Button>
+                    {tranId && (
+                        <div className="text-xs text-muted-foreground mb-4">
+                            Transaction ID: {tranId}
+                        </div>
                     )}
+                    <Button asChild>
+                        <Link href="/wallet">Go to Wallet</Link>
+                    </Button>
                 </CardContent>
             </Card>
         </div>
