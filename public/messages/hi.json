@@ -1,0 +1,24 @@
+{
+  "SettingsPage": {
+    "title": "सेटिंग्स",
+    "description": "अपने खाते और एप्लिकेशन की प्राथमिकताएँ प्रबंधित करें।",
+    "appearanceTitle": "दिखावट",
+    "appearanceDescription": "ऐप के रंग-रूप को अनुकूलित करें।",
+    "themeLabel": "थीम",
+    "themeDescription": "एप्लिकेशन थीम चुनें।",
+    "themeLight": "लाइट",
+    "themeDark": "डार्क",
+    "themeSystem": "सिस्टम",
+    "languageRegionTitle": "भाषा और क्षेत्र",
+    "languageRegionDescription": "भाषा और क्षेत्रीय सेटिंग्स प्रबंधित करें।",
+    "languageLabel": "भाषा",
+    "languageDescription": "अपनी पसंदीदा भाषा चुनें।",
+    "languageEnglish": "English",
+    "languageBengali": "বাংলা",
+    "languageHindi": "हिंदी",
+    "notificationsTitle": "सूचनाएं",
+    "notificationsDescription": "आप सूचनाएं कैसे प्राप्त करते हैं, इसका प्रबंधन करें।",
+    "pushNotificationsLabel": "पुश सूचनाएं",
+    "pushNotificationsDescription": "अपने डिवाइस पर सूचनाएं प्राप्त करें।"
+  }
+}

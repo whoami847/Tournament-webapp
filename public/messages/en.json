@@ -1,0 +1,24 @@
+{
+  "SettingsPage": {
+    "title": "Settings",
+    "description": "Manage your account and application preferences.",
+    "appearanceTitle": "Appearance",
+    "appearanceDescription": "Customize the look and feel of the app.",
+    "themeLabel": "Theme",
+    "themeDescription": "Select the application theme.",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "languageRegionTitle": "Language & Region",
+    "languageRegionDescription": "Manage language and regional settings.",
+    "languageLabel": "Language",
+    "languageDescription": "Select your preferred language.",
+    "languageEnglish": "English",
+    "languageBengali": "বাংলা",
+    "languageHindi": "हिंदी",
+    "notificationsTitle": "Notifications",
+    "notificationsDescription": "Manage how you receive notifications.",
+    "pushNotificationsLabel": "Push Notifications",
+    "pushNotificationsDescription": "Receive notifications on your device."
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "SettingsPage": {
+    "title": "সেটিংস",
+    "description": "আপনার অ্যাকাউন্ট এবং অ্যাপ্লিকেশন পছন্দগুলি পরিচালনা করুন।",
+    "appearanceTitle": "অ্যাপের ধরণ",
+    "appearanceDescription": "অ্যাপের চেহারা এবং অনুভূতি কাস্টমাইজ করুন।",
+    "themeLabel": "থিম",
+    "themeDescription": "অ্যাপ্লিকেশন থিম নির্বাচন করুন।",
+    "themeLight": "হালকা",
+    "themeDark": "ডার্ক",
+    "themeSystem": "সিস্টেম",
+    "languageRegionTitle": "ভাষা ও অঞ্চল",
+    "languageRegionDescription": "ভাষা এবং আঞ্চলিক সেটিংস পরিচালনা করুন।",
+    "languageLabel": "ভাষা",
+    "languageDescription": "আপনার পছন্দের ভাষা নির্বাচন করুন।",
+    "languageEnglish": "English",
+    "languageBengali": "বাংলা",
+    "languageHindi": "हिंदी",
+    "notificationsTitle": "বিজ্ঞপ্তি",
+    "notificationsDescription": "আপনি কীভাবে বিজ্ঞপ্তি পাবেন তা পরিচালনা করুন।",
+    "pushNotificationsLabel": "পুশ বিজ্ঞপ্তি",
+    "pushNotificationsDescription": "আপনার ডিভাইসে বিজ্ঞপ্তি গ্রহণ করুন।"
+  }
+}
