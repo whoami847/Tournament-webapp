@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { Camera, AlertCircle, Loader2 } from 'lucide-react';
+import { Camera, AlertCircle, Loader2, Link, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { uploadImage } from '@/lib/storage-service';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface ImageUploadProps {
   initialImageUrl?: string;
@@ -25,8 +27,23 @@ export function ImageUpload({
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [linkInput, setLinkInput] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'upload' | 'link'>('upload');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Initialize tab based on existing image URL
+  useEffect(() => {
+    if (initialImageUrl) {
+      // Check if it's a Firebase storage URL or external link
+      if (initialImageUrl.includes('firebasestorage') || initialImageUrl.includes('googleapis')) {
+        setActiveTab('upload');
+      } else {
+        setActiveTab('link');
+        setLinkInput(initialImageUrl);
+      }
+    }
+  }, [initialImageUrl]);
 
   const validateFile = (file: File): string | null => {
     // Check file type
@@ -42,6 +59,15 @@ export function ImageUpload({
     }
 
     return null;
+  };
+
+  const validateImageUrl = (url: string): boolean => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,6 +109,8 @@ export function ImageUpload({
       
       setImageUrl(downloadURL);
       onUploadComplete(downloadURL);
+      // Clear link input when upload is successful
+      setLinkInput('');
       
       toast({
         title: 'Image Uploaded Successfully',
@@ -106,36 +134,75 @@ export function ImageUpload({
     }
   };
 
+  const handleLinkSubmit = () => {
+    if (!linkInput.trim()) {
+      setError('Please enter a valid image URL.');
+      return;
+    }
+
+    if (!validateImageUrl(linkInput.trim())) {
+      setError('Please enter a valid URL.');
+      return;
+    }
+
+    setError(null);
+    const url = linkInput.trim();
+    setImageUrl(url);
+    onUploadComplete(url);
+    
+    toast({
+      title: 'Image Link Added',
+      description: 'Image link has been set successfully.',
+    });
+  };
+
+  const handleClearImage = () => {
+    setImageUrl('');
+    setLinkInput('');
+    onUploadComplete('');
+    setError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const triggerFileSelect = () => {
     if (!uploading) {
       fileInputRef.current?.click();
     }
   };
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value as 'upload' | 'link');
+    setError(null);
+  };
+
   return (
     <div className="space-y-4">
+      {/* Image Preview */}
       <div className="relative w-full aspect-video rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/50 flex items-center justify-center overflow-hidden">
         {imageUrl ? (
-          <Image src={imageUrl} alt="Uploaded preview" fill className="object-cover" />
+          <>
+            <Image src={imageUrl} alt="Preview" fill className="object-cover" />
+            <div className="absolute top-2 right-2">
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={handleClearImage}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </>
         ) : (
           <div className="text-center text-muted-foreground">
             <Camera className="mx-auto h-12 w-12 mb-2" />
-            <p>No image uploaded</p>
+            <p>No image selected</p>
           </div>
         )}
         
-        {!uploading && (
-          <div 
-            className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-            onClick={triggerFileSelect}
-          >
-            <div className="text-center text-white">
-              <Camera className="mx-auto h-8 w-8 mb-2" />
-              <p className="font-semibold">{imageUrl ? 'Change Image' : 'Upload Image'}</p>
-            </div>
-          </div>
-        )}
-
         {uploading && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
             <div className="text-center text-white">
@@ -146,15 +213,7 @@ export function ImageUpload({
         )}
       </div>
 
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        className="hidden"
-        accept="image/png,image/jpeg,image/jpg,image/webp"
-        disabled={uploading}
-      />
-
+      {/* Upload Progress */}
       {uploading && (
         <div className="space-y-2">
           <Progress value={progress} className="w-full" />
@@ -163,19 +222,64 @@ export function ImageUpload({
           </p>
         </div>
       )}
-      
-      {!uploading && !imageUrl && (
-        <Button 
-          type="button" 
-          onClick={triggerFileSelect} 
-          disabled={uploading} 
-          className="w-full"
-        >
-          <Camera className="mr-2 h-4 w-4" />
-          Upload Image
-        </Button>
+
+      {/* Tabs for Upload/Link Options */}
+      {!imageUrl && (
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="upload" disabled={uploading}>
+              <Camera className="mr-2 h-4 w-4" />
+              Upload Image
+            </TabsTrigger>
+            <TabsTrigger value="link" disabled={uploading}>
+              <Link className="mr-2 h-4 w-4" />
+              Image Link
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="upload" className="space-y-4">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
+              disabled={uploading}
+            />
+            <Button 
+              type="button" 
+              onClick={triggerFileSelect} 
+              disabled={uploading} 
+              className="w-full"
+            >
+              <Camera className="mr-2 h-4 w-4" />
+              {uploading ? 'Uploading...' : 'Choose Image File'}
+            </Button>
+          </TabsContent>
+          
+          <TabsContent value="link" className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                type="url"
+                placeholder="Enter image URL (e.g., https://example.com/image.jpg)"
+                value={linkInput}
+                onChange={(e) => setLinkInput(e.target.value)}
+                disabled={uploading}
+              />
+              <Button 
+                type="button" 
+                onClick={handleLinkSubmit}
+                disabled={uploading || !linkInput.trim()}
+              >
+                <Link className="mr-2 h-4 w-4" />
+                Add
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
       )}
 
+      {/* Error Display */}
       {error && (
         <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20">
           <AlertCircle className="h-4 w-4 text-destructive" />
