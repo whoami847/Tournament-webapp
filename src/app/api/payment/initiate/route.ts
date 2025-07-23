@@ -1,170 +1,104 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getActiveGateways } from '@/lib/gateways';
-import { createOrder } from '@/lib/orders';
-import { getDoc, doc } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase';
+import { doc, setDoc, collection, query, where, getDocs, limit, getDoc, updateDoc } from 'firebase/firestore';
+import { firestore as db } from '@/lib/firebase';
+import type { Gateway, Order } from '@/types';
+import { format } from 'date-fns';
 
-export async function POST(request: NextRequest) {
-  try {
-    const { amount, userId } = await request.json();
+const RUPANTORPAY_API_URL = 'https://payment.rupantorpay.com/api/payment/checkout';
 
-    // Validate input
-    if (!amount || !userId || amount < 10) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid amount or user ID' },
-        { status: 400 }
-      );
-    }
-
-    // Get active gateways
-    const gateways = await getActiveGateways();
-    if (gateways.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'No active payment gateways available' },
-        { status: 400 }
-      );
-    }
-
-    // Use the first active gateway (RupantorPay)
-    const gateway = gateways[0];
-
-    // Get user information
-    const userDoc = await getDoc(doc(firestore, 'users', userId));
-    if (!userDoc.exists()) {
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    const userData = userDoc.data();
-
-    // Create order in database
-    const orderResult = await createOrder({
-      userId,
-      userName: userData.name || 'Unknown User',
-      amount,
-      gatewayId: gateway.id,
-      status: 'PENDING',
-    });
-
-    if (!orderResult.success) {
-      return NextResponse.json(
-        { success: false, error: 'Failed to create order' },
-        { status: 500 }
-      );
-    }
-
-    const orderId = orderResult.id;
-
-    // Prepare RupantorPay API request
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const rupantorPayUrl = gateway.isLive 
-      ? 'https://payment.rupantorpay.com/api/payment/checkout'
-      : process.env.RUPANTORPAY_CHECKOUT_URL || 'https://sandbox.rupantorpay.com/api/payment/checkout';
-
-    const paymentData = {
-      store_id: process.env.RUPANTORPAY_STORE_ID || 'your_store_id',
-      store_passwd: gateway.storePassword,
-      total_amount: amount,
-      currency: 'BDT',
-      tran_id: orderId,
-      success_url: `${baseUrl}/api/payment/callback?status=success&tran_id=${orderId}`,
-      fail_url: `${baseUrl}/api/payment/callback?status=fail&tran_id=${orderId}`,
-      cancel_url: `${baseUrl}/api/payment/callback?status=cancel&tran_id=${orderId}`,
-      ipn_url: `${baseUrl}/api/payment/callback`,
-      product_name: 'Wallet Top Up',
-      product_category: 'Digital Service',
-      product_profile: 'general',
-      cus_name: userData.name || 'Customer',
-      cus_email: userData.email || 'customer@example.com',
-      cus_add1: 'Dhaka',
-      cus_add2: 'Dhaka',
-      cus_city: 'Dhaka',
-      cus_state: 'Dhaka',
-      cus_postcode: '1000',
-      cus_country: 'Bangladesh',
-      cus_phone: userData.phone || '01700000000',
-      cus_fax: '01700000000',
-      ship_name: userData.name || 'Customer',
-      ship_add1: 'Dhaka',
-      ship_add2: 'Dhaka',
-      ship_city: 'Dhaka',
-      ship_state: 'Dhaka',
-      ship_postcode: '1000',
-      ship_country: 'Bangladesh',
-    };
-
-    console.log('Initiating payment with RupantorPay:', {
-      url: rupantorPayUrl,
-      orderId,
-      amount,
-      userId
-    });
-
-    // Make request to RupantorPay
-    const response = await fetch(rupantorPayUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams(paymentData).toString(),
-    });
-
-    const responseText = await response.text();
-    console.log('RupantorPay response:', responseText);
-
-    if (!response.ok) {
-      console.error('RupantorPay API error:', response.status, responseText);
-      return NextResponse.json(
-        { success: false, error: 'Payment gateway error' },
-        { status: 500 }
-      );
-    }
-
-    // Parse response (RupantorPay usually returns HTML or redirect URL)
-    // For RupantorPay, the response might be a redirect URL or HTML form
-    // We need to handle this based on their API documentation
-    
-    let paymentUrl = null;
-    
-    // If response is JSON
+export async function POST(req: NextRequest) {
     try {
-      const jsonResponse = JSON.parse(responseText);
-      paymentUrl = jsonResponse.GatewayPageURL || jsonResponse.payment_url;
-    } catch {
-      // If response is HTML with redirect or form
-      const urlMatch = responseText.match(/window\.location\.href\s*=\s*["']([^"']+)["']/);
-      if (urlMatch) {
-        paymentUrl = urlMatch[1];
-      } else {
-        // Check for form action URL
-        const formMatch = responseText.match(/action\s*=\s*["']([^"']+)["']/);
-        if (formMatch) {
-          paymentUrl = formMatch[1];
+        const body = await req.json();
+        const { amount, userId } = body;
+
+        // Validate if userId is present
+        if (!userId) {
+            return NextResponse.json({ message: 'User ID is missing.' }, { status: 400 });
         }
-      }
-    }
 
-    if (paymentUrl) {
-      return NextResponse.json({
-        success: true,
-        payment_url: paymentUrl,
-        order_id: orderId,
-      });
-    } else {
-      console.error('No payment URL found in response:', responseText);
-      return NextResponse.json(
-        { success: false, error: 'Invalid payment gateway response' },
-        { status: 500 }
-      );
-    }
+        // Fetch user directly by ID to ensure they exist
+        const userRef = doc(db, 'users', userId);
+        const userDoc = await getDoc(userRef);
 
-  } catch (error: any) {
-    console.error('Payment initiation error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+        if (!userDoc.exists()) {
+            return NextResponse.json({ message: 'User not found.' }, { status: 404 });
+        }
+        const userData = userDoc.data();
+        
+        // Fetch active gateway from Firestore
+        const gatewaysRef = collection(db, 'gateways');
+        const q = query(gatewaysRef, where('enabled', '==', true), limit(1));
+        const gatewaySnapshot = await getDocs(q);
+
+        if (gatewaySnapshot.empty) {
+            return NextResponse.json({ message: 'No active payment gateway found.' }, { status: 500 });
+        }
+        
+        const gateway = gatewaySnapshot.docs[0].data() as Gateway;
+        if (!gateway.storePassword) {
+            return NextResponse.json({ message: 'The active payment gateway is missing its Store Password / Secret.' }, { status: 500 });
+        }
+
+        // Generate a unique transaction ID
+        const transaction_id = `TRN-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+        
+        // Create an order document in Firestore
+        const newOrder: Order = {
+            id: transaction_id,
+            date: format(new Date(), 'dd/MM/yyyy, HH:mm:ss'),
+            description: `Wallet Top-up of ৳${amount}`,
+            amount: Number(amount),
+            status: 'PENDING',
+            userId: userId,
+            gatewayId: gateway.id,
+            paymentDetails: { customer_name: userData.email.split('@')[0], customer_email: userData.email }
+        };
+        await setDoc(doc(db, "orders", transaction_id), newOrder);
+
+        const protocol = req.headers.get('x-forwarded-proto') || 'http';
+        const host = req.headers.get('host');
+        if (!host) {
+            return NextResponse.json({ message: 'Could not determine host from request headers.'}, { status: 500 });
+        }
+        const baseUrl = `${protocol}://${host}`;
+        
+        // Prepare payload for RupantorPay
+        const payload = {
+            transaction_id: transaction_id,
+            amount: amount,
+            success_url: `${baseUrl}/api/payment/callback?transaction_id=${transaction_id}&status=success`,
+            fail_url: `${baseUrl}/api/payment/callback?transaction_id=${transaction_id}&status=fail`,
+            cancel_url: `${baseUrl}/api/payment/callback?transaction_id=${transaction_id}&status=cancel`,
+            customer_name: userData.email.split('@')[0],
+            customer_email: userData.email,
+            customer_phone: '01000000000', // Placeholder phone
+        };
+
+        // Prepare headers for RupantorPay API
+        const headers = {
+            'Content-Type': 'application/json',
+            'X-API-KEY': gateway.storePassword,
+            'X-CLIENT': host,
+        };
+
+        // Call RupantorPay API
+        const response = await fetch(RUPANTORPAY_API_URL, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(payload),
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.payment_url) {
+            return NextResponse.json({ payment_url: result.payment_url });
+        } else {
+            // Update order to FAILED if initiation fails
+            await updateDoc(doc(db, "orders", transaction_id), { status: 'FAILED' });
+            return NextResponse.json({ message: result.message || 'Payment initiation failed' }, { status: response.status });
+        }
+    } catch (error) {
+        console.error('Payment initiation error:', error);
+        return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    }
 }

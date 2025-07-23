@@ -7,6 +7,7 @@ import { AuthProvider } from '@/context/auth-context';
 import AuthGuard from '@/components/auth-guard';
 import { ThemeProvider } from '@/components/theme-provider';
 import { LanguageProvider } from '@/context/language-context';
+import { StoreInitializer } from '@/components/store-initializer';
 
 
 export const metadata: Metadata = {
@@ -35,6 +36,7 @@ export default function RootLayout({
         >
           <LanguageProvider>
             <AuthProvider>
+              <StoreInitializer />
               <AuthGuard>
                 <>
                   <main className="flex-grow">

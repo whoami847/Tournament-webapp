@@ -224,22 +224,19 @@ export interface PendingPrize {
 export interface Gateway {
   id: string;
   name: string;
-  storePassword: string;
+  storePassword?: string;
   isLive: boolean;
   enabled: boolean;
-  createdAt: Timestamp | string;
-  updatedAt: Timestamp | string;
 }
 
 export interface Order {
   id: string;
-  userId: string;
-  userName: string;
+  date: string;
+  description: string;
   amount: number;
-  gatewayId: string;
-  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
-  paymentId?: string;
-  transactionId?: string;
-  createdAt: Timestamp | string;
-  updatedAt: Timestamp | string;
+  status: 'COMPLETED' | 'PENDING' | 'FAILED' | 'CANCELLED';
+  userId: string;
+  productDetails?: any;
+  gatewayId?: string;
+  paymentDetails?: any;
 }

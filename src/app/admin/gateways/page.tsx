@@ -1,9 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -20,197 +28,182 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, MoreVertical, Edit, Trash2, Loader2 } from 'lucide-react';
+import { Plus, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { GatewayDialog } from '@/components/admin/gateway-dialog';
-import { getGatewaysStream, deleteGateway } from '@/lib/gateways';
+import { useAppStore } from '@/lib/store';
 import type { Gateway } from '@/types';
-import { format } from 'date-fns';
 
-export default function GatewaysPage() {
+export default function AdminGatewaysPage() {
+  const { gateways, deleteGateway } = useAppStore();
   const { toast } = useToast();
-  const [gateways, setGateways] = useState<Gateway[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedGateway, setSelectedGateway] = useState<Gateway | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [gatewayToDelete, setGatewayToDelete] = useState<Gateway | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    const unsubscribe = getGatewaysStream((gatewayData) => {
-      setGateways(gatewayData);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [selectedGateway, setSelectedGateway] = React.useState<Gateway | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
   const handleNewGateway = () => {
     setSelectedGateway(null);
-    setDialogOpen(true);
+    setIsDialogOpen(true);
   };
 
-  const handleEditGateway = (gateway: Gateway) => {
+  const handleEdit = (gateway: Gateway) => {
     setSelectedGateway(gateway);
-    setDialogOpen(true);
+    setIsDialogOpen(true);
   };
 
-  const handleDeleteClick = (gateway: Gateway) => {
-    setGatewayToDelete(gateway);
-    setDeleteDialogOpen(true);
+  const handleDelete = (gateway: Gateway) => {
+    setSelectedGateway(gateway);
+    setIsDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!gatewayToDelete) return;
-    
-    setIsDeleting(true);
-    const result = await deleteGateway(gatewayToDelete.id);
-    
-    if (result.success) {
-      toast({
-        title: "Success",
-        description: "Gateway deleted successfully",
-      });
-    } else {
-      toast({
-        title: "Error",
-        description: result.error || "Failed to delete gateway",
-        variant: "destructive",
-      });
+  const handleDeleteConfirm = () => {
+    if (selectedGateway) {
+      deleteGateway(selectedGateway.id);
+      toast({ title: 'Success', description: 'Gateway deleted successfully.' });
     }
-    
-    setIsDeleting(false);
-    setDeleteDialogOpen(false);
-    setGatewayToDelete(null);
+    setSelectedGateway(null);
+    setIsDeleteDialogOpen(false);
   };
 
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      </div>
-    );
-  }
+  const handleDeleteCancel = () => {
+    setSelectedGateway(null);
+    setIsDeleteDialogOpen(false);
+  };
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Payment Gateways</h1>
-          <p className="text-muted-foreground">
-            Manage your payment gateway configurations
-          </p>
-        </div>
-        <Button onClick={handleNewGateway}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Gateway
-        </Button>
-      </div>
-
-      {gateways.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold">No Gateways Found</h3>
-              <p className="text-muted-foreground">
-                Get started by adding your first payment gateway
-              </p>
-              <Button onClick={handleNewGateway} className="mt-4">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Gateway
-              </Button>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle>Payment Gateways</CardTitle>
+            <CardDescription>Manage the automated payment gateways for your store.</CardDescription>
+          </div>
+          <Button onClick={handleNewGateway}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Gateway
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {gateways.length > 0 ? (
+            <>
+              {/* Desktop View */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Gateway Name</TableHead>
+                      <TableHead>Mode</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {gateways.map((gateway) => (
+                      <TableRow key={gateway.id}>
+                        <TableCell className="font-medium">
+                          {gateway.name}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={gateway.isLive ? 'destructive' : 'secondary'}>
+                            {gateway.isLive ? 'Live' : 'Sandbox'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={gateway.enabled ? 'default' : 'secondary'} className={gateway.enabled ? 'bg-green-500' : ''}>
+                            {gateway.enabled ? 'Enabled' : 'Disabled'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEdit(gateway)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDelete(gateway)} className="text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {/* Mobile View */}
+              <div className="md:hidden space-y-4">
+                {gateways.map((gateway) => (
+                  <Card key={gateway.id} className="p-4 shadow-sm">
+                    <div className="flex justify-between items-start">
+                      <p className="font-semibold text-base">{gateway.name}</p>
+                      <div className="flex gap-2">
+                        <Badge variant={gateway.isLive ? 'destructive' : 'secondary'}>
+                          {gateway.isLive ? 'Live' : 'Sandbox'}
+                        </Badge>
+                        <Badge variant={gateway.enabled ? 'default' : 'secondary'} className={gateway.enabled ? 'bg-green-500' : ''}>
+                          {gateway.enabled ? 'Enabled' : 'Disabled'}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex justify-end">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEdit(gateway)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDelete(gateway)} className="text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-8">
+              <p>No payment gateways found.</p>
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {gateways.map((gateway) => (
-            <Card key={gateway.id}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  {gateway.name}
-                </CardTitle>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleEditGateway(gateway)}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleDeleteClick(gateway)}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Status:</span>
-                    <Badge variant={gateway.enabled ? "default" : "secondary"}>
-                      {gateway.enabled ? "Enabled" : "Disabled"}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Mode:</span>
-                    <Badge variant={gateway.isLive ? "destructive" : "outline"}>
-                      {gateway.isLive ? "Live" : "Sandbox"}
-                    </Badge>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Created: {format(new Date(gateway.createdAt), "PPp")}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+          )}
+        </CardContent>
+      </Card>
 
       <GatewayDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        isOpen={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
         gateway={selectedGateway}
-        onSuccess={() => {
-          // Data will be updated via the stream
-        }}
+        onSuccess={() => setIsDialogOpen(false)}
       />
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the gateway
-              "{gatewayToDelete?.name}" and remove all its configurations.
+              This action cannot be undone. This will permanently delete the payment gateway
+              "{selectedGateway?.name}".
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteConfirm}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete'
-              )}
+            <AlertDialogCancel onClick={handleDeleteCancel}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
