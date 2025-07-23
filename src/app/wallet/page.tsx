@@ -31,7 +31,7 @@ import type { PlayerProfile, Transaction, WithdrawMethod } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getTransactionsStream } from "@/lib/transactions-service";
 import { createWithdrawalRequest } from '@/lib/withdraw-requests-service';
-import { getActiveWithdrawMethods } from '@/lib/withdraw-methods-service';
+import { getWithdrawMethodsStream } from '@/lib/withdraw-methods-service';
 import { format } from 'date-fns';
 
 
@@ -110,18 +110,28 @@ function WithdrawDialogContent({ closeDialog, profile }: { closeDialog: () => vo
     const { toast } = useToast();
     const [methods, setMethods] = useState<WithdrawMethod[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [selectedMethod, setSelectedMethod] = useState<WithdrawMethod | null>(null);
     const [amount, setAmount] = useState('');
     const [accountNumber, setAccountNumber] = useState('');
     const [isWithdrawing, setIsWithdrawing] = useState(false);
 
     useEffect(() => {
-        const fetchMethods = async () => {
-            const activeMethods = await getActiveWithdrawMethods();
-            setMethods(activeMethods);
-            setLoading(false);
-        };
-        fetchMethods();
+        const unsubscribe = getWithdrawMethodsStream((allMethods) => {
+            try {
+                // Filter only active methods for users
+                const activeMethods = allMethods.filter(method => method.status === 'active');
+                setMethods(activeMethods);
+                setError(null);
+                setLoading(false);
+            } catch (err) {
+                console.error('Error processing withdrawal methods:', err);
+                setError('Failed to load withdrawal methods');
+                setLoading(false);
+            }
+        });
+
+        return () => unsubscribe();
     }, []);
 
     const handleWithdraw = async () => {
@@ -167,6 +177,24 @@ function WithdrawDialogContent({ closeDialog, profile }: { closeDialog: () => vo
                 </DialogHeader>
                 <div className="flex items-center justify-center h-48">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            </DialogContent>
+        )
+    }
+
+    if (error) {
+        return (
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Error Loading Methods</DialogTitle>
+                    <DialogDescription>
+                        {error}
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="flex items-center justify-center h-48">
+                    <Button onClick={() => window.location.reload()} variant="outline">
+                        Retry
+                    </Button>
                 </div>
             </DialogContent>
         )

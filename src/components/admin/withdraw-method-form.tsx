@@ -13,7 +13,7 @@ import { ImageUpload } from './image-upload';
 
 const formSchema = z.object({
   name: z.string().min(2, "Method name is required."),
-  image: z.string().url("Please upload an icon for the method."),
+  image: z.string().optional(),
   receiverInfo: z.string().min(5, "Receiver info is required."),
   feePercentage: z.coerce.number().min(0).max(100),
   minAmount: z.coerce.number().min(0),

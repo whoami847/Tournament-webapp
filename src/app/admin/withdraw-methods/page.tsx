@@ -25,6 +25,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { WithdrawMethodForm } from '@/components/admin/withdraw-method-form';
 import { Badge } from '@/components/ui/badge';
+import { addTestWithdrawalMethods } from '@/lib/test-data';
+import { TestFirebaseConnection } from '@/components/test-firebase-connection';
 
 export default function AdminWithdrawMethodsPage() {
     const [methods, setMethods] = useState<WithdrawMethod[]>([]);
@@ -88,8 +90,29 @@ export default function AdminWithdrawMethodsPage() {
         if (!open) setSelectedMethod(undefined);
     }
 
+    const handleAddTestData = async () => {
+        setIsSubmitting(true);
+        const result = await addTestWithdrawalMethods();
+        if (result.success) {
+            toast({
+                title: "Test Data Added!",
+                description: "Sample withdrawal methods have been added successfully.",
+            });
+        } else {
+            toast({
+                title: "Error",
+                description: result.error || "Failed to add test data.",
+                variant: "destructive",
+            });
+        }
+        setIsSubmitting(false);
+    }
+
     return (
         <>
+            <div className="mb-4">
+                <TestFirebaseConnection />
+            </div>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
@@ -222,6 +245,11 @@ export default function AdminWithdrawMethodsPage() {
                         <div className="text-center py-16 border border-dashed rounded-lg">
                             <h3 className="text-xl font-medium">No Methods Configured</h3>
                             <p className="text-muted-foreground mt-2">Add a withdrawal method to get started.</p>
+                            <div className="mt-4 space-x-2">
+                                <Button variant="outline" onClick={handleAddTestData} disabled={isSubmitting}>
+                                    {isSubmitting ? 'Adding...' : 'Add Sample Methods'}
+                                </Button>
+                            </div>
                         </div>
                     )}
                 </CardContent>

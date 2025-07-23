@@ -6,9 +6,12 @@ const methodsCollection = collection(firestore, 'withdrawMethods');
 
 export const addWithdrawMethod = async (method: Omit<WithdrawMethod, 'id'>) => {
   try {
-    await addDoc(methodsCollection, method);
+    console.log('Adding withdrawal method:', method);
+    const docRef = await addDoc(methodsCollection, method);
+    console.log('Withdrawal method added with ID:', docRef.id);
     return { success: true };
   } catch (error: any) {
+    console.error('Error adding withdrawal method:', error);
     return { success: false, error: error.message };
   }
 };
@@ -21,6 +24,9 @@ export const getWithdrawMethodsStream = (callback: (methods: WithdrawMethod[]) =
       methods.push({ id: doc.id, ...doc.data() } as WithdrawMethod);
     });
     callback(methods);
+  }, (error) => {
+    console.error('Error fetching withdrawal methods:', error);
+    callback([]); // Return empty array on error
   });
   return unsubscribe;
 };
