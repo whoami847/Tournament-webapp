@@ -72,7 +72,7 @@ export const createUserProfile = async (uid: string, data: Partial<PlayerProfile
         winrate: 0,
         games: 0,
         wins: 0,
-        balance: 100, // Welcome bonus
+        balance: 0, // Start with zero balance
         pendingBalance: 0,
         status: 'active',
     }, { merge: true });

@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useRef, useState, useMemo, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import Autoplay from 'embla-carousel-autoplay';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -101,10 +102,33 @@ const HomeHeader = () => {
 };
 
 const SectionHeader = ({ title, actionText, actionHref }: { title: string, actionText?: string, actionHref?: string }) => (
-  <div className="flex justify-between items-baseline mb-4">
-    <h2 className="text-xl font-bold tracking-tight">{title}</h2>
-    {actionText && actionHref && <Link href={actionHref} className="text-sm font-medium text-primary hover:underline">{actionText}</Link>}
-  </div>
+  <motion.div 
+    initial={{ opacity: 0, y: -10 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5 }}
+    className="flex justify-between items-baseline mb-4"
+  >
+    <motion.h2 
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.5, delay: 0.1 }}
+      className="text-xl font-bold tracking-tight"
+    >
+      {title}
+    </motion.h2>
+    {actionText && actionHref && (
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        whileHover={{ scale: 1.05 }}
+      >
+        <Link href={actionHref} className="text-sm font-medium text-primary hover:underline transition-colors">
+          {actionText}
+        </Link>
+      </motion.div>
+    )}
+  </motion.div>
 );
 
 const FeaturedEvent = ({ banners }: { banners: FeaturedBanner[] }) => {
@@ -227,20 +251,38 @@ const TopPlayers = ({ players, loading }: { players: PlayerProfile[], loading: b
     return (
         <div className="space-y-2">
             {players.map((p, index) => (
-                <Card key={p.id} className="p-3 bg-card flex items-center gap-4 border-none">
-                    <div className="relative h-12 w-12 flex-shrink-0">
-                        <Avatar className="h-12 w-12 border-2 border-primary/50"><AvatarImage src={p.avatar} data-ai-hint="gamer avatar" /><AvatarFallback>{p.name.charAt(0)}</AvatarFallback></Avatar>
-                        <Badge className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground h-5 w-5 p-0 flex items-center justify-center text-xs font-bold border-2 border-background">{index + 1}</Badge>
-                    </div>
-                    <div className="flex-grow">
-                        <p className="font-bold">{p.name}</p>
-                        <p className="text-xs text-muted-foreground">{p.role}</p>
-                    </div>
-                    <div className="text-right">
-                        <p className="font-bold text-primary">{p.winrate}%</p>
-                        <p className="text-xs text-muted-foreground">{p.wins ?? 0} Wins</p>
-                    </div>
-                </Card>
+                <motion.div
+                    key={p.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    whileHover={{ scale: 1.02 }}
+                >
+                    <Card className="p-3 bg-card flex items-center gap-4 border-none hover:shadow-lg transition-shadow duration-300">
+                        <motion.div 
+                            className="relative h-12 w-12 flex-shrink-0"
+                            whileHover={{ scale: 1.1 }}
+                            transition={{ type: "spring", stiffness: 300 }}
+                        >
+                            <Avatar className="h-12 w-12 border-2 border-primary/50"><AvatarImage src={p.avatar} data-ai-hint="gamer avatar" /><AvatarFallback>{p.name.charAt(0)}</AvatarFallback></Avatar>
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ delay: index * 0.1 + 0.3, type: "spring", stiffness: 400 }}
+                            >
+                                <Badge className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground h-5 w-5 p-0 flex items-center justify-center text-xs font-bold border-2 border-background">{index + 1}</Badge>
+                            </motion.div>
+                        </motion.div>
+                        <div className="flex-grow">
+                            <p className="font-bold">{p.name}</p>
+                            <p className="text-xs text-muted-foreground">{p.role}</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="font-bold text-primary">{p.winrate}%</p>
+                            <p className="text-xs text-muted-foreground">{p.wins ?? 0} Wins</p>
+                        </div>
+                    </Card>
+                </motion.div>
             ))}
         </div>
     );
@@ -248,19 +290,33 @@ const TopPlayers = ({ players, loading }: { players: PlayerProfile[], loading: b
 
 const GameFilter = ({ games }: { games: GameCategory[] }) => (
     <div className="grid grid-cols-2 gap-4 mb-6">
-        {games.map((game) => (
-            <Link 
-                key={game.id} 
-                href={`/tournaments?game=${encodeURIComponent(game.name)}`} 
-                className="rounded-xl overflow-hidden cursor-pointer border-2 border-transparent transition-all bg-card hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
+        {games.map((game, index) => (
+            <motion.div
+                key={game.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
             >
-                <div className="relative aspect-square bg-muted">
-                    <Image src={game.image} alt={game.name} fill className="object-cover" data-ai-hint={game.dataAiHint}/>
-                </div>
-                <div className="p-3">
-                    <h4 className="font-semibold text-center text-sm uppercase">{game.name}</h4>
-                </div>
-            </Link>
+                <Link 
+                    href={`/tournaments?game=${encodeURIComponent(game.name)}`} 
+                    className="block rounded-xl overflow-hidden cursor-pointer border-2 border-transparent transition-all bg-card hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary hover:shadow-lg"
+                >
+                    <div className="relative aspect-square bg-muted overflow-hidden">
+                        <motion.div
+                            whileHover={{ scale: 1.1 }}
+                            transition={{ duration: 0.3 }}
+                            className="w-full h-full"
+                        >
+                            <Image src={game.image} alt={game.name} fill className="object-cover" data-ai-hint={game.dataAiHint}/>
+                        </motion.div>
+                    </div>
+                    <div className="p-3">
+                        <h4 className="font-semibold text-center text-sm uppercase">{game.name}</h4>
+                    </div>
+                </Link>
+            </motion.div>
         ))}
     </div>
 );

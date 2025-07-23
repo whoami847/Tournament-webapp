@@ -4,6 +4,7 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
   updateDoc,
   onSnapshot,
   query,
@@ -136,7 +137,8 @@ export const sendPasswordResetForUser = async (email: string | null): Promise<{ 
         return { success: false, error: 'User email is not available.' };
     }
     try {
-        await sendPasswordResetEmail(auth, email);
+        const { sendPasswordReset } = await import('./auth-service');
+        await sendPasswordReset(email);
         return { success: true };
     } catch(error: any) {
         return { success: false, error: error.message };
